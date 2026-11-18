@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaxQuest: Asesmen PPh 21 - Siswa Kelas XI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- MediaPipe Hands & Camera Utils -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect x=%226%22 y=%2214%22 width=%2252%22 height=%2242%22 rx=%228%22 fill=%22%231e3a8a%22 stroke=%22%23f59e0b%22 stroke-width=%223%22/><path d=%22M22 14V10a6 6 0 0 1 6-6h8a6 6 0 0 1 6 6v4%22 fill=%22none%22 stroke=%22%23f59e0b%22 stroke-width=%223%22/><rect x=%2226%22 y=%2228%22 width=%2212%22 height=%228%22 rx=%222%22 fill=%22%23fbbf24%22/><circle cx=%2232%22 cy=%2232%22 r=%222%22 fill=%22%231e3a8a%22/></svg>">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Fredoka', sans-serif;
+      user-select: none;
+      background-color: #0b1329;
+      background-image: 
+        radial-gradient(rgba(245, 158, 11, 0.12) 1.5px, transparent 1.5px),
+        radial-gradient(rgba(59, 130, 246, 0.08) 1.5px, transparent 1.5px);
+      background-size: 28px 28px, 56px 56px;
+      cursor: default;
+      scroll-behavior: smooth;
+    }
+
+    .font-playful {
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+
+    /* Styling Box Kardus Berkas Pajak */
+    .box-item {
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .box-item:hover, .box-item.aimed {
+      transform: translateY(-8px) scale(1.05);
+    }
+
+    .box-lid {
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: bottom center;
+    }
+
+    /* Efek Saat Kardus Terbuka (Unboxed) */
+    .box-item.opened .box-lid {
+      transform: translateY(-30px) rotate(-18deg) scale(0.95);
+      opacity: 0.9;
+    }
+    .box-item.opened .box-sparkles {
+      opacity: 1;
+      transform: translateY(-20px) scale(1.2);
+    }
+    .box-item.opened {
+      filter: grayscale(0.55) opacity(0.6);
+      transform: scale(0.92);
+      pointer-events: none;
+    }
+
+    /* Animasi Lompat Kardus */
+    @keyframes boxJump {
+      0%, 100% { transform: scale(1) translateY(0); }
+      30% { transform: scale(1.15, 0.85) translateY(4px); }
+      50% { transform: scale(0.9, 1.15) translateY(-14px); }
+      70% { transform: scale(1.05, 0.95) translateY(-4px); }
+    }
+    .jumping {
+      animation: boxJump 0.35s ease-in-out;
+    }
+
+    /* Crosshair Target Gestur AI */
+    #crosshair {
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: transform 0.04s linear, border-color 0.15s ease, background-color 0.15s ease;
+    }
+    #crosshair.pinched {
+      transform: translate(-50%, -50%) scale(0.72);
+      border-color: #f59e0b;
+      background-color: rgba(245, 158, 11, 0.35);
+    }
+
+    @keyframes shakeWrong {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: shakeWrong 0.35s ease-in-out;
+    }
+
+    /* Animasi Bantal Kentut Zonk */
+    @keyframes squishWhoopee {
+      0%, 100% { transform: scale(1, 1); }
+      30% { transform: scale(1.25, 0.75); }
+      50% { transform: scale(0.85, 1.15); }
+      70% { transform: scale(1.08, 0.92); }
+    }
+    .animate-squish {
+      animation: squishWhoopee 1.2s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    @keyframes smokeDrift {
+      0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
+      40% { opacity: 0.9; }
+      100% { transform: translate(15px, -20px) scale(1.2); opacity: 0; }
+    }
+    .smoke-puff-1 { animation: smokeDrift 1.5s ease-out infinite; }
+    .smoke-puff-2 { animation: smokeDrift 1.5s ease-out infinite 0.5s; }
+
+    /* Card Mini Panduan di Footer */
+    .footer-guide-card {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .footer-guide-card:hover {
+      transform: translateY(-4px);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col items-center justify-between p-3 sm:p-5 relative pb-36">
+
+  <!-- Reticle AI Hand Pointer (Bidikan Kamera & Cubit = Klik/Dwell) -->
+  <div id="crosshair" class="fixed z-[100] w-14 h-14 border-4 border-amber-400 rounded-full flex items-center justify-center shadow-2xl backdrop-blur-[1px]">
+    <div class="w-3.5 h-3.5 bg-amber-300 rounded-full animate-ping"></div>
+  </div>
+
+  <!-- Indikator Visual Edge Scroll Layar -->
+  <div id="scrollTopIndicator" class="fixed top-2 z-[95] left-1/2 -translate-x-1/2 bg-amber-400 text-slate-950 font-black text-xs px-4 py-1.5 rounded-full shadow-lg border-2 border-white flex items-center gap-1.5 opacity-0 transition-opacity pointer-events-none">
+    <span>⬆️</span> Menggulung ke Atas...
+  </div>
+  <div id="scrollBottomIndicator" class="fixed bottom-2 z-[95] left-1/2 -translate-x-1/2 bg-amber-400 text-slate-950 font-black text-xs px-4 py-1.5 rounded-full shadow-lg border-2 border-white flex items-center gap-1.5 opacity-0 transition-opacity pointer-events-none">
+    <span>⬇️</span> Menggulung ke Bawah...
+  </div>
+
+  <!-- Header Banner -->
+  <header class="w-full max-w-6xl bg-slate-900/90 backdrop-blur-md rounded-3xl p-3 sm:p-4 shadow-2xl border-2 border-indigo-900/60 flex flex-wrap items-center justify-between gap-3 sticky top-3 z-30">
+    <!-- Brand & Judul Game -->
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-tr from-amber-500 to-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-md border-2 border-amber-300 text-slate-950">
+        💼
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl sm:text-2xl font-black text-white tracking-wide font-playful">TaxQuest</h1>
+          <span class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow uppercase">
+            Asesmen PPh 21 • Kelas XI
+          </span>
+        </div>
+        <p class="text-xs text-slate-300 font-semibold">Simulasi Interaktif Pajak Penghasilan Pasal 21 Siswa SMA/SMK</p>
+      </div>
+    </div>
+
+    <!-- Status Bar & Navigasi Kanan -->
+    <div class="flex items-center flex-wrap gap-2">
+      <!-- Skor Nilai -->
+      <div class="flex items-center gap-2 bg-slate-800/80 border border-amber-500/40 px-3.5 py-1.5 rounded-2xl shadow-sm">
+        <span class="text-xl">🏆</span>
+        <div class="text-left">
+          <span class="text-[9px] uppercase font-bold text-amber-400 block leading-none">Skor Asesmen</span>
+          <span id="scoreVal" class="text-lg font-black text-amber-300 leading-none">0</span>
+        </div>
+      </div>
+
+      <!-- Progres Soal Terjawab -->
+      <div class="flex items-center gap-2 bg-slate-800/80 border border-blue-500/40 px-3.5 py-1.5 rounded-2xl shadow-sm">
+        <span class="text-xl">📝</span>
+        <div class="text-left">
+          <span class="text-[9px] uppercase font-bold text-blue-400 block leading-none">Soal</span>
+          <span id="answeredVal" class="text-lg font-black text-blue-300 leading-none">0/20</span>
+        </div>
+      </div>
+
+      <!-- Benar & Salah Badges -->
+      <div class="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-500/40 px-2.5 py-1.5 rounded-2xl text-xs font-bold text-emerald-300">
+        <span>✅</span> <span id="correctVal">0</span>
+      </div>
+      <div class="flex items-center gap-1.5 bg-rose-950/60 border border-rose-500/40 px-2.5 py-1.5 rounded-2xl text-xs font-bold text-rose-300">
+        <span>❌</span> <span id="wrongVal">0</span>
+      </div>
+
+      <!-- Tombol Toggle Gestur (Kamera ON/OFF) -->
+      <button id="cameraToggleBtn" onclick="toggleCamera()" class="interactive-btn px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-md border border-emerald-400 flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+        <span id="camToggleIcon">📹</span>
+        <span id="camToggleLabel">Gestur Kamera: ON</span>
+      </button>
+
+      <!-- Tombol Panduan -->
+      <button onclick="openGuideModal()" class="interactive-btn px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xs shadow transition active:scale-95 cursor-pointer flex items-center gap-1">
+        <span>📖</span> Panduan
+      </button>
+    </div>
+  </header>
+
+  <!-- Papan Petunjuk Pak Anton (Konsultan Pajak) -->
+  <div class="w-full max-w-6xl mt-3 bg-slate-900/90 backdrop-blur-md rounded-2xl px-4 py-3 border border-indigo-800/60 shadow-lg flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-2xl shadow-inner">
+        👨‍💼
+      </div>
+      <div>
+        <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider block">Pak Anton (Konsultan Pajak)</span>
+        <p id="robotDialogue" class="text-xs sm:text-sm font-bold text-slate-200">
+          "Halo siswa kelas XI! Arahkan bidikan ke salah satu kardus berkas pajak lalu <span class="text-amber-400 font-black">Cubit Jari</span> (atau klik mouse) untuk membukanya!"
+        </p>
+      </div>
+    </div>
+    <span id="gameModeBadge" class="hidden sm:inline-block bg-slate-800 text-amber-300 text-xs font-black px-3 py-1.5 rounded-xl border border-amber-400/30 whitespace-nowrap">
+      Mode: 30 Berkas Perpajakan
+    </span>
+  </div>
+
+  <!-- Area 30 Paket Kardus Berkas Pajak (Grid Responsif) -->
+  <main class="w-full max-w-6xl my-6 flex-1 flex flex-col justify-center">
+    <div class="text-center mb-5">
+      <h2 class="text-2xl sm:text-3xl font-black text-white drop-shadow font-playful">
+        Buka 30 Berkas Kardus Perpajakan! 📁
+      </h2>
+      <p class="text-xs sm:text-sm text-slate-300 font-medium drop-shadow mt-1">
+        Komposisi: <span class="bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-md font-bold border border-amber-400/30">20 Soal PPh 21</span> dan 
+        <span class="bg-pink-400/20 text-pink-300 px-2 py-0.5 rounded-md font-bold border border-pink-400/30">10 Kardus ZONK Kentut</span>. Jawab semua soal untuk melihat hasil nilai akhirmu!
+      </p>
+    </div>
+
+    <!-- Grid 30 Kardus -->
+    <div id="boxGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 sm:gap-5 justify-items-center"></div>
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- FOOTER DESAIN BARU: LEGA & PROFESSIONAL GAMING HUB -->
+  <!-- ======================================================== -->
+  <footer class="w-full max-w-6xl mt-8 mb-4 bg-slate-900/90 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-2xl border border-indigo-900/60 flex flex-col gap-5 z-20 xl:pr-52">
+    
+    <!-- Bagian Atas Footer: Info & Reset -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div class="flex items-center gap-3.5 text-center sm:text-left">
+        <div class="w-14 h-14 bg-gradient-to-tr from-amber-500 to-yellow-400 border-2 border-amber-300 rounded-3xl flex items-center justify-center text-3xl shadow-md text-slate-950">
+          🏛️
+        </div>
+        <div>
+          <div class="flex items-center justify-center sm:justify-start gap-2">
+            <h4 class="text-lg font-black text-white font-playful">TaxQuest Assessment Hub</h4>
+            <span class="bg-amber-400/20 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-lg border border-amber-400/40">Kurikulum Merdeka</span>
+          </div>
+          <p class="text-xs text-slate-300 font-medium mt-0.5">
+            Platform Pembelajaran Interaktif PPh 21 Berbasis Computer Vision & AI Gesture Control
+          </p>
+        </div>
+      </div>
+
+      <!-- Tombol Acak & Reset -->
+      <button onclick="resetGame()" class="interactive-btn px-4 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 rounded-2xl font-black text-xs shadow-md border border-amber-300 flex items-center gap-2 transition active:scale-95 cursor-pointer">
+        <span>🔄</span> Acak & Reset 30 Kardus
+      </button>
+    </div>
+
+    <!-- Bagian Tengah: 3 Kartu Panduan Cepat -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <!-- Langkah 1: Membidik & Membuka -->
+      <div class="footer-guide-card bg-slate-800/80 border border-slate-700 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+        <div class="w-10 h-10 bg-amber-500 text-slate-950 rounded-xl flex items-center justify-center text-xl font-black shadow-inner">
+          👌
+        </div>
+        <div class="text-left">
+          <span class="text-[10px] font-black uppercase text-amber-400 tracking-wider block">Langkah 1: Membuka</span>
+          <p class="text-xs font-bold text-slate-200">Arahkan & Cubit Jempol-Telunjuk</p>
+        </div>
+      </div>
+
+      <!-- Langkah 2: Menjawab Soal -->
+      <div class="footer-guide-card bg-slate-800/80 border border-slate-700 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+        <div class="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center text-xl font-black shadow-inner">
+          ⏱️
+        </div>
+        <div class="text-left">
+          <span class="text-[10px] font-black uppercase text-blue-400 tracking-wider block">Langkah 2: Menjawab</span>
+          <p class="text-xs font-bold text-slate-200">Bidik Pilihan, Cubit & Tahan 1 Detik</p>
+        </div>
+      </div>
+
+      <!-- Langkah 3: Navigasi & Fallback -->
+      <div class="footer-guide-card bg-slate-800/80 border border-slate-700 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+        <div class="w-10 h-10 bg-emerald-500 text-slate-950 rounded-xl flex items-center justify-center text-xl font-black shadow-inner">
+          🖱️
+        </div>
+        <div class="text-left">
+          <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider block">Langkah 3: Fallback Mouse</span>
+          <p class="text-xs font-bold text-slate-200">Klik Kiri Langsung Berfungsi Kapan Saja</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bagian Bawah: Sistem Info -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-semibold text-slate-400 pt-2 border-t border-slate-800">
+      <div class="flex items-center gap-2">
+        <span id="sysPingDot" class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        <span>Sistem AI: <b class="text-slate-200">MediaPipe Hand Landmarker (Dual Tangan) + Dwell Control</b></span>
+      </div>
+      <div>
+        <span>Materi: Pajak Penghasilan Pasal 21 (Subjek, Objek, PTKP, Tarif TER)</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ======================================================== -->
+  <!-- FEED KAMERA WEBCAM AI (Pojok Kanan Bawah) -->
+  <!-- ======================================================== -->
+  <div id="camContainer" class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-[90] bg-slate-900 p-2.5 rounded-3xl border-2 border-amber-400/60 shadow-2xl flex flex-col items-center gap-1.5">
+    <div class="flex items-center justify-between w-full px-1">
+      <span class="flex items-center gap-1.5 text-[10px] font-black text-slate-200">
+        <span id="camStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> KAMERA GESTUR
+      </span>
+      <span id="camBadgeStatus" class="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">Aktif</span>
+    </div>
+
+    <!-- Layar Webcam & Overlay Status -->
+    <div class="relative w-44 h-32 bg-slate-950 rounded-2xl overflow-hidden border border-slate-700">
+      <video id="webcam" class="w-full h-full object-cover -scale-x-100" playsinline muted></video>
+      
+      <!-- Placeholder Saat Kamera OFF -->
+      <div id="camOffOverlay" class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-center p-2 hidden">
+        <span class="text-3xl mb-1">📷</span>
+        <span class="text-xs font-bold text-slate-300">Kamera Nonaktif</span>
+        <span class="text-[10px] text-amber-400 mt-0.5">Mode Mouse Aktif Penuh</span>
+        <button onclick="toggleCamera()" class="mt-2 text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-2.5 py-1 rounded-lg transition active:scale-95 cursor-pointer">
+          Nyalakan
+        </button>
+      </div>
+
+      <div id="gestureStatus" class="absolute bottom-1 left-1 right-1 bg-slate-900/90 text-[10px] text-center text-amber-300 py-1 px-1 rounded-xl font-bold border border-amber-400/20">
+        Memuat AI Gestur...
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between w-full px-1 text-[11px] font-bold text-slate-300">
+      <span>Kontrol: <span id="currentControlMode" class="text-amber-400 font-black">AI & Mouse</span></span>
+      <span id="handsDetectedBadge" class="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">0 Tangan</span>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL SOAL PILIHAN GANDA (A, B, C, D, E) -->
+  <!-- ======================================================== -->
+  <div id="questionModal" class="fixed inset-0 z-[85] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 hidden">
+    <div class="bg-slate-900 text-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border-2 border-amber-400/80 relative flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Header Modal Soal -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-amber-500/20 border border-amber-400/50 text-amber-300 text-xs font-black rounded-full flex items-center gap-1.5">
+            <span>📑</span> <span id="modalQuestionNumberTag">SOAL PPh 21 #1</span>
+          </span>
+          <span class="text-[11px] text-slate-400 font-semibold hidden sm:inline-block">Pajak Penghasilan Pasal 21</span>
+        </div>
+        <button onclick="speakCurrentQuestion()" class="interactive-btn px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 shadow-sm cursor-pointer transition">
+          🔊 Dengar Soal
+        </button>
+      </div>
+
+      <!-- Teks Pertanyaan -->
+      <div class="bg-slate-800/80 rounded-2xl p-4 sm:p-5 border border-slate-700/80">
+        <h3 id="questionText" class="text-sm sm:text-base md:text-lg font-bold text-white leading-relaxed">
+          Pertanyaan sedang dimuat...
+        </h3>
+      </div>
+
+      <!-- Petunjuk Interaksi & Progress Bar Dwell -->
+      <div class="bg-slate-950/60 border border-indigo-900/60 rounded-2xl p-3">
+        <div class="flex items-center justify-between text-xs font-black mb-1">
+          <span class="text-slate-300">👉 Bidik tombol pilihan & <b class="text-amber-400">Cubit & Tahan 1 Detik</b> (atau klik mouse)</span>
+          <span id="modalHoldProgressBadge" class="text-amber-400 font-extrabold">Cubit & Tahan Jawaban 1 Detik</span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">
+          Kamera: Cubit jempol & telunjuk lalu tahan di atas pilihan yang kamu pilih. Mouse: Langsung klik kiri.
+        </p>
+      </div>
+
+      <!-- 5 Tombol Pilihan Jawaban (A, B, C, D, E) -->
+      <div id="optionsContainer" class="flex flex-col gap-2.5">
+        <!-- Pilihan A s/d E akan di-generate via JavaScript -->
+      </div>
+
+      <!-- Banner Feedback Hasil Jawaban -->
+      <div id="answerFeedbackBanner" class="hidden text-center py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all"></div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL ZONK (BANTAL KENTUT KOCAK) -->
+  <!-- ======================================================== -->
+  <div id="zonkModal" class="fixed inset-0 z-[85] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 text-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-pink-500 relative">
+      <div class="relative w-32 h-28 mx-auto flex items-center justify-center my-1">
+        <!-- Asap Hijau Kentut -->
+        <svg viewBox="0 0 100 100" class="smoke-puff-1 absolute -right-3 -top-2 w-16 h-16 pointer-events-none opacity-80">
+          <circle cx="50" cy="50" r="18" fill="#bef264" />
+          <circle cx="35" cy="40" r="14" fill="#a3e635" />
+          <circle cx="65" cy="45" r="15" fill="#d9f99d" />
+        </svg>
+        <svg viewBox="0 0 100 100" class="smoke-puff-2 absolute -right-6 top-6 w-12 h-12 pointer-events-none opacity-80">
+          <circle cx="50" cy="50" r="14" fill="#a3e635" />
+          <circle cx="65" cy="55" r="12" fill="#bef264" />
+        </svg>
+
+        <!-- Bantal Kentut -->
+        <div class="animate-squish relative z-10 w-24 h-20 bg-gradient-to-b from-pink-400 to-rose-500 rounded-[50px/40px] border-4 border-rose-600 shadow-md flex flex-col items-center justify-center">
+          <div class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-4 h-5 bg-rose-500 border-2 border-rose-700 rounded-l-md"></div>
+          <div class="flex items-center gap-3 mb-1">
+            <span class="text-xs font-black text-rose-950 font-mono">><</span>
+            <div class="w-2.5 h-2.5 bg-rose-950 rounded-full"></div>
+          </div>
+          <div class="relative w-4 h-2 border-b-2 border-rose-950 rounded-full flex justify-center">
+            <div class="w-2 h-2 bg-red-400 rounded-b-full border border-rose-700 -bottom-1 absolute"></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="text-2xl font-black text-pink-400 mb-1 font-playful tracking-wide">YAAAH ZONK! 💨</h3>
+      <p class="text-xs font-semibold text-slate-300 mb-5 leading-relaxed">
+        Ppprrfttt! Kardus ini isinya cuma <span class="text-pink-400 font-black">bantal kentut usil</span>! Bukan dokumen kuis perpajakan. Ayo buka kardus lainnya!
+      </p>
+
+      <button onclick="closeZonk()" class="interactive-btn w-full py-3.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 font-black text-white text-sm rounded-2xl shadow-lg shadow-pink-500/20 transition transform active:scale-95 border border-pink-400 cursor-pointer">
+        Buka Kardus Lain! 🚀
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL HASIL AKHIR ASESMEN (RESULT PAGE POP-UP) -->
+  <!-- ======================================================== -->
+  <div id="resultModal" class="fixed inset-0 z-[96] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 text-white rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center shadow-2xl border-4 border-amber-400 relative">
+      <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-3xl mx-auto flex items-center justify-center text-4xl shadow-xl border-2 border-amber-200 text-slate-950 mb-3 animate-bounce">
+        🏆
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-black text-white font-playful">ASESMEN SELESAI!</h2>
+      <p class="text-xs text-amber-300 font-bold uppercase tracking-wider mb-4">
+        Laporan Hasil Evaluasi PPh 21 • Siswa Kelas XI
+      </p>
+
+      <!-- Kartu Ringkasan Nilai -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 mb-4">
+        <div class="text-xs text-slate-400 font-bold uppercase mb-1">Skor Akhir</div>
+        <div id="finalScoreDisplay" class="text-5xl font-black text-amber-400 font-playful mb-1">100</div>
+        <div id="finalPredicateBadge" class="inline-block px-3 py-1 bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-black rounded-full mb-3">
+          Sangat Memuaskan
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-700/80 text-center">
+          <div class="bg-slate-900/80 p-2 rounded-xl">
+            <span class="text-[10px] text-slate-400 font-bold block">Total Soal</span>
+            <span class="text-base font-black text-white">20</span>
+          </div>
+          <div class="bg-emerald-950/60 border border-emerald-500/30 p-2 rounded-xl">
+            <span class="text-[10px] text-emerald-400 font-bold block">Jawaban Benar</span>
+            <span id="finalCorrectCount" class="text-base font-black text-emerald-300">0</span>
+          </div>
+          <div class="bg-rose-950/60 border border-rose-500/30 p-2 rounded-xl">
+            <span class="text-[10px] text-rose-400 font-bold block">Jawaban Salah</span>
+            <span id="finalWrongCount" class="text-base font-black text-rose-300">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pesan Evaluasi Pak Anton -->
+      <div class="bg-slate-950/60 border border-indigo-900/50 rounded-2xl p-3.5 mb-5 text-left flex items-start gap-3">
+        <span class="text-2xl">👨‍💼</span>
+        <div>
+          <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider block">Catatan Konsultan Pajak:</span>
+          <p id="finalFeedbackMessage" class="text-xs text-slate-300 font-medium leading-relaxed mt-0.5">
+            Luar biasa! Pemahamanmu mengenai subjek, objek, PTKP, dan TER PPh 21 sudah sangat solid!
+          </p>
+        </div>
+      </div>
+
+      <!-- Tombol Main Lagi -->
+      <button onclick="resetGame()" class="interactive-btn w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-sm rounded-2xl shadow-xl border border-amber-300 transition active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+        <span>🔄</span> Main Lagi & Reset Soal
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL PANDUAN PENGGUNAAN -->
+  <!-- ======================================================== -->
+  <div id="guideModal" class="fixed inset-0 z-[95] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 text-white rounded-3xl max-w-xl w-full p-6 text-center shadow-2xl border-2 border-indigo-500/80 relative">
+      <button onclick="closeGuideModal()" class="interactive-btn absolute top-4 right-4 w-8 h-8 bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-400 rounded-full font-black text-sm flex items-center justify-center transition cursor-pointer">
+        ✕
+      </button>
+
+      <div class="w-12 h-12 bg-indigo-600/30 border border-indigo-400/40 rounded-2xl mx-auto flex items-center justify-center text-2xl text-amber-400 mb-2">
+        📖
+      </div>
+
+      <h3 class="text-xl font-black text-white font-playful mb-1">
+        Panduan Bermain TaxQuest
+      </h3>
+      <p class="text-xs text-slate-400 mb-4">
+        Asesmen Interaktif PPh 21 Berbasis Gestur Tangan & Mouse
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-5">
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700">
+          <div class="flex items-center gap-2 mb-1.5 text-amber-400 font-bold text-xs">
+            <span>👌</span> 1. Buka Kardus
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Arahkan crosshair ke kardus, lalu <b class="text-white">cubit jempol & telunjuk</b> untuk membukanya.
+          </p>
+        </div>
+
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700">
+          <div class="flex items-center gap-2 mb-1.5 text-blue-400 font-bold text-xs">
+            <span>⏱️</span> 2. Jawab Pilihan Ganda
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Bidik pilihan A, B, C, D, atau E lalu <b class="text-white">cubit & tahan 1 detik</b> hingga progress bar terisi penuh!
+          </p>
+        </div>
+
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700">
+          <div class="flex items-center gap-2 mb-1.5 text-emerald-400 font-bold text-xs">
+            <span>🖱️</span> 3. Kontrol Mouse
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Klik kiri mouse biasa tetap aktif penuh tanpa delay sebagai alternatif atau bila kamera dimatikan.
+          </p>
+        </div>
+
+        <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700">
+          <div class="flex items-center gap-2 mb-1.5 text-pink-400 font-bold text-xs">
+            <span>📷</span> 4. Toggle Kamera
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Gunakan tombol <b class="text-white">Gestur Kamera</b> di header untuk mematikan atau menyalakan kamera sewaktu-waktu.
+          </p>
+        </div>
+      </div>
+
+      <button onclick="closeGuideModal()" class="interactive-btn w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 font-black text-white text-sm rounded-2xl shadow-lg transition active:scale-95 cursor-pointer">
+        Saya Mengerti, Mulai Asesmen! 🚀
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT GAME ENGINE -->
+  <!-- ======================================================== -->
+  <script>
+    // --- 1. Audio Synthesizer (Web Audio API) ---
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playSfx(type) {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+
+        if (type === 'unboxing') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(260, now);
+          osc.frequency.exponentialRampToValueAtTime(750, now + 0.18);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'correct') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+          osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+          osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.38);
+          osc.start(now);
+          osc.stop(now + 0.38);
+        } else if (type === 'wrong') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(200, now);
+          osc.frequency.setValueAtTime(140, now + 0.12);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'zonk') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(170, now);
+          osc.frequency.linearRampToValueAtTime(90, now + 0.1);
+          osc.frequency.linearRampToValueAtTime(130, now + 0.2);
+          osc.frequency.linearRampToValueAtTime(50, now + 0.4);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === 'finish') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.1);
+          osc.frequency.setValueAtTime(783.99, now + 0.2);
+          osc.frequency.setValueAtTime(1046.50, now + 0.3);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        }
+      } catch (e) {
+        console.warn('Audio play error:', e);
+      }
+    }
+
+    // --- 2. Text-to-Speech (Suara Pembaca Soal Pak Anton) ---
+    function speakCurrentQuestion() {
+      if ('speechSynthesis' in window && currentActiveBox && currentActiveBox.data) {
+        window.speechSynthesis.cancel();
+        const q = currentActiveBox.data;
+        const textToRead = `Pak Anton membaca: ${q.q}. Pilihan jawaban: A. ${q.options[0]}, B. ${q.options[1]}, C. ${q.options[2]}, D. ${q.options[3]}, E. ${q.options[4]}`;
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // --- 3. 20 Bank Soal PPh 21 Wajib ---
+    const taxQuestionsBank = [
+      { q: "Pajak Penghasilan Pasal 21 (PPh 21) pada dasarnya merupakan pajak atas ....", options: ["A. Keuntungan perusahaan berbadan hukum", "B. Penghasilan OP sehubungan pekerjaan/jasa", "C. Seluruh barang yang dibeli konsumen", "D. Kepemilikan tanah dan bangunan", "E. Transaksi ekspor barang"], answer: 1 },
+      { q: "Berikut yang termasuk subjek PPh 21 adalah ....", options: ["A. Hanya perusahaan perseroan", "B. Hanya pemilik tanah", "C. Pegawai tetap, tenaga lepas, bukan pegawai", "D. Seluruh konsumen barang", "E. Hanya bendahara negara"], answer: 2 },
+      { q: "PTKP untuk wajib pajak berstatus K/1 adalah ....", options: ["A. Rp54.000.000", "B. Rp58.500.000", "C. Rp60.000.000", "D. Rp63.000.000", "E. Rp72.000.000"], answer: 3 },
+      { q: "Penghasilan bruto adalah ....", options: ["A. Penghasilan setelah PTKP", "B. Penghasilan setelah pajak", "C. Seluruh penghasilan sebelum dikurangi potongan", "D. Penghasilan bebas pajak", "E. Jumlah PTKP dan PKP"], answer: 2 },
+      { q: "Contoh objek PPh 21 adalah ....", options: ["A. Keuntungan perusahaan", "B. Gaji, tunjangan, bonus, dan honorarium", "C. Seluruh barang konsumsi", "D. Kepemilikan tanah", "E. Tabungan di rumah"], answer: 1 },
+      { q: "PTKP berfungsi untuk ....", options: ["A. Menentukan tanggungan perusahaan", "B. Menentukan tarif TER langsung", "C. Batas penghasilan tidak kena pajak", "D. Menggantikan penghasilan bruto", "E. Menentukan besarnya gaji"], answer: 2 },
+      { q: "Fungsi utama TER bagi pegawai tetap adalah ....", options: ["A. Mengganti tarif progresif tahunan", "B. Menghitung pajak badan", "C. Mempermudah pemotongan PPh 21 bulanan", "D. Menentukan besarnya PTKP", "E. Menghapus kewajiban pajak"], answer: 2 },
+      { q: "Status PTKP yang termasuk kategori TER B adalah ....", options: ["A. TK/0, TK/1, K/0", "B. TK/2, TK/3, K/1, K/2", "C. Hanya K/3", "D. TK/0 dan K/3", "E. Seluruh status TK dan K"], answer: 1 },
+      { q: "Penghasilan bruto Rp10.000.000/bulan (TK/0). Tarif TER A 2%. Besar pemotongan PPh 21 adalah ....", options: ["A. Rp20.000", "B. Rp100.000", "C. Rp150.000", "D. Rp200.000", "E. Rp500.000"], answer: 3 },
+      { q: "Penghasilan bruto Rp8.000.000/bulan. Tarif TER 1,5%. Pemotongan PPh 21 adalah ....", options: ["A. Rp80.000", "B. Rp100.000", "C. Rp120.000", "D. Rp150.000", "E. Rp800.000"], answer: 2 },
+      { q: "Pihak yang umumnya melakukan pemotongan PPh 21 atas gaji pegawai adalah ....", options: ["A. Tetangga pegawai", "B. Pemberi kerja", "C. Pembeli barang", "D. Teman kerja", "E. Konsumen"], answer: 1 },
+      { q: "Contoh subjek PPh 21 sebagai BUKAN pegawai adalah ....", options: ["A. Konsumen supermarket", "B. Pemilik toko", "C. Dokter yang memberikan jasa profesional", "D. Pembeli kendaraan", "E. Pemilik rumah"], answer: 2 },
+      { q: "Penghasilan berikut yang menjadi objek PPh 21 adalah ....", options: ["A. Bonus pekerjaan", "B. Uang kembalian", "C. Hadiah dari teman tanpa hubungan kerja", "D. Tabungan pribadi", "E. Pinjaman bank"], answer: 0 },
+      { q: "Kepanjangan dari PTKP adalah ....", options: ["A. Penghasilan Tetap Kena Pajak", "B. Penghasilan Tidak Kena Pajak", "C. Penghitungan Tarif Kena Pajak", "D. Pajak Tambahan Karyawan", "E. Penghasilan Tahunan Karyawan"], answer: 1 },
+      { q: "Besaran PTKP status TK/0 adalah ....", options: ["A. Rp45.000.000", "B. Rp50.000.000", "C. Rp54.000.000", "D. Rp58.500.000", "E. Rp63.000.000"], answer: 2 },
+      { q: "Status PTKP K/0 menunjukkan bahwa wajib pajak ....", options: ["A. Tidak kawin, 0 tanggungan", "B. Tidak kawin, 1 tanggungan", "C. Kawin, 0 tanggungan", "D. Kawin, 1 tanggungan", "E. Kawin, 3 tanggungan"], answer: 2 },
+      { q: "Status TK/1, maka jumlah PTKP-nya adalah ....", options: ["A. Rp54.000.000", "B. Rp58.500.000", "C. Rp63.000.000", "D. Rp67.500.000", "E. Rp72.000.000"], answer: 1 },
+      { q: "Tarif Efektif Rata-Rata (TER) digunakan untuk ....", options: ["A. Menghitung harga barang", "B. Menghitung keuntungan perusahaan", "C. Mempermudah penghitungan PPh 21 bulanan", "D. Menentukan jumlah gaji", "E. Menghitung tanggungan keluarga"], answer: 2 },
+      { q: "Penghasilan bruto Rp5.000.000/bulan. Tarif TER 1%. Pemotongan PPh 21 adalah ....", options: ["A. Rp5.000", "B. Rp25.000", "C. Rp50.000", "D. Rp100.000", "E. Rp500.000"], answer: 2 },
+      { q: "Bruto Rp8.000.000 dipotong PPh 21 Rp120.000, maka tarif TER yang digunakan adalah ....", options: ["A. 0,5%", "B. 1%", "C. 1,5%", "D. 2%", "E. 2,5%"], answer: 2 }
+    ];
+
+    // Palet Warna Kardus Berkas Pajak
+    const boxThemes = [
+      { top: "#f59e0b", side: "#d97706", front: "#b45309", tape: "#fef08a", border: "#78350f" }, // Amber Kraft
+      { top: "#3b82f6", side: "#1d4ed8", front: "#1e3a8a", tape: "#bfdbfe", border: "#172554" }, // Royal Navy
+      { top: "#10b981", side: "#059669", front: "#047857", tape: "#a7f3d0", border: "#064e3b" }, // Emerald Fiscal
+      { top: "#f97316", side: "#ea580c", front: "#c2410c", tape: "#fed7aa", border: "#7c2d12" }, // Bronze Document
+      { top: "#8b5cf6", side: "#6d28d9", front: "#5b21b6", tape: "#ddd6fe", border: "#3b0764" }  // Executive Violet
+    ];
+
+    // --- 4. State Global Permainan ---
+    let boxes = [];
+    let soalTerjawab = 0;
+    let jumlahBenar = 0;
+    let jumlahSalah = 0;
+    let score = 0;
+
+    let isQuestionModalOpen = false;
+    let isAnsweringLocked = false;
+    let currentActiveBox = null;
+
+    // State Dwell Pinch Gestur
+    let dwellTargetIdx = -1;
+    let dwellStartTime = null;
+    const DWELL_REQUIRED_MS = 1000;
+
+    // State Kamera & Gestur
+    let isCameraActive = true;
+    let cameraInstance = null;
+    let handsInstance = null;
+    let wasPinched = false;
+
+    // --- 5. Inisialisasi 30 Kardus (20 Soal + 10 Zonk) ---
+    function initBoxes() {
+      const grid = document.getElementById('boxGrid');
+      grid.innerHTML = '';
+      boxes = [];
+
+      const rawBank = [];
+      taxQuestionsBank.forEach((item, idx) => {
+        rawBank.push({ type: 'question', data: item, bankIdx: idx });
+      });
+      for (let i = 0; i < 10; i++) {
+        rawBank.push({ type: 'zonk', zonkId: i });
+      }
+
+      // Acak posisi kardus
+      rawBank.sort(() => Math.random() - 0.5);
+
+      rawBank.forEach((item, idx) => {
+        const boxData = { ...item, opened: false, id: idx };
+        boxes.push(boxData);
+        const theme = boxThemes[idx % boxThemes.length];
+
+        const card = document.createElement('div');
+        card.id = `box-item-${idx}`;
+        card.setAttribute('data-box-id', idx);
+        card.className = "box-item interactive-btn cursor-pointer flex flex-col items-center justify-center p-1 relative w-32 sm:w-36";
+
+        card.innerHTML = `
+          <div class="box-sparkles absolute -top-4 text-2xl font-black transition-all duration-300 opacity-0 pointer-events-none z-30 drop-shadow">
+            ${item.type === 'zonk' ? '💨' : '✨ 📑 ✨'}
+          </div>
+
+          <div class="relative w-28 h-28 flex flex-col items-center justify-center">
+            <!-- Tutup Kardus -->
+            <div class="box-lid absolute top-1 z-20 w-24 h-10">
+              <svg viewBox="0 0 100 45" class="w-full h-full drop-shadow-md">
+                <polygon points="50,2 96,18 50,34 4,18" fill="${theme.top}" stroke="${theme.border}" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="50,2 62,6 50,34 38,30" fill="${theme.tape}" opacity="0.9" />
+                <polygon points="4,18 50,34 50,42 4,26" fill="${theme.side}" stroke="${theme.border}" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="50,34 96,18 96,26 50,42" fill="${theme.front}" stroke="${theme.border}" stroke-width="4" stroke-linejoin="round" />
+              </svg>
+            </div>
+
+            <!-- Badan Kardus dengan Segel Berkas -->
+            <div class="absolute bottom-2 z-10 w-24 h-18">
+              <svg viewBox="0 0 100 70" class="w-full h-full drop-shadow-xl">
+                <polygon points="4,2 50,18 50,68 4,52" fill="${theme.side}" stroke="${theme.border}" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="50,18 96,2 96,52 50,68" fill="${theme.front}" stroke="${theme.border}" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="44,16 56,18 56,69 44,67" fill="${theme.tape}" opacity="0.9" />
+                <!-- Label Arsip -->
+                <rect x="12" y="24" width="22" height="14" rx="2" fill="#ffffff" stroke="${theme.border}" stroke-width="2" transform="skewY(19)" opacity="0.95" />
+                <line x1="16" y1="28" x2="28" y2="28" stroke="#333" stroke-width="2" transform="skewY(19)"/>
+                <line x1="16" y1="32" x2="24" y2="32" stroke="#333" stroke-width="1.5" transform="skewY(19)"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="mt-1 bg-slate-900/90 px-3 py-0.5 rounded-full border border-amber-400/60 shadow-md flex items-center gap-1 z-20">
+            <span class="text-[11px] font-black text-amber-400">#${idx + 1}</span>
+            <span class="text-[9px] font-extrabold text-slate-200 uppercase">BERKAS ${String.fromCharCode(65 + (idx % 26))}</span>
+          </div>
+        `;
+
+        card.onclick = () => selectBox(idx);
+        grid.appendChild(card);
+      });
+    }
+
+    // --- 6. Interaksi Membuka Kardus ---
+    function selectBox(idx) {
+      const box = boxes[idx];
+      if (!box || box.opened) return;
+
+      const boxElem = document.getElementById(`box-item-${idx}`);
+      if (!boxElem) return;
+
+      currentActiveBox = box;
+      boxElem.classList.add('jumping');
+      playSfx('unboxing');
+
+      setTimeout(() => {
+        boxElem.classList.remove('jumping');
+        boxElem.classList.add('opened');
+        box.opened = true;
+
+        setTimeout(() => {
+          if (box.type === 'zonk') {
+            playSfx('zonk');
+            document.getElementById('robotDialogue').innerHTML = `"Aduh ZONK! Berkas ini cuma berisi bantal kentut! Buka kardus lainnya ya!"`;
+            document.getElementById('zonkModal').classList.remove('hidden');
+          } else {
+            openQuestionModal(box);
+          }
+        }, 350);
+      }, 250);
+    }
+
+    function closeZonk() {
+      document.getElementById('zonkModal').classList.add('hidden');
+      document.getElementById('robotDialogue').innerHTML = `"Pilih kardus berikutnya yang ada dokumen soal PPh 21!"`;
+    }
+
+    // --- 7. Modal Pilihan Ganda (A, B, C, D, E) ---
+    function openQuestionModal(box) {
+      isQuestionModalOpen = true;
+      isAnsweringLocked = false;
+      resetDwellState();
+
+      const q = box.data;
+      document.getElementById('modalQuestionNumberTag').innerText = `SOAL PPh 21 #${soalTerjawab + 1}`;
+      document.getElementById('questionText').innerText = q.q;
+
+      const feedback = document.getElementById('answerFeedbackBanner');
+      feedback.className = "hidden text-center py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all";
+      feedback.innerText = '';
+
+      const container = document.getElementById('optionsContainer');
+      container.innerHTML = '';
+
+      q.options.forEach((optText, optIdx) => {
+        const btn = document.createElement('button');
+        btn.id = `option-btn-${optIdx}`;
+        btn.setAttribute('data-opt-idx', optIdx);
+        btn.className = "option-answer-btn relative w-full text-left p-3.5 sm:p-4 rounded-2xl border-2 border-slate-700 bg-slate-800/90 hover:border-amber-400 hover:bg-slate-800 transition-all font-semibold text-slate-100 shadow-md flex items-center justify-between overflow-hidden group cursor-pointer active:scale-[0.99]";
+
+        const letter = String.fromCharCode(65 + optIdx);
+        // Hapus prefix "A. ", "B. ", dll jika ada di string agar rapi
+        const cleanText = optText.replace(/^[A-E]\.\s*/, '');
+
+        btn.innerHTML = `
+          <!-- Bar Pengisi Waktu Dwell 1 Detik -->
+          <div id="opt-progress-${optIdx}" class="absolute left-0 top-0 bottom-0 bg-amber-400/35 rounded-2xl transition-all duration-75 pointer-events-none" style="width: 0%;"></div>
+          
+          <div class="relative z-10 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-slate-900 text-amber-400 group-hover:bg-amber-400 group-hover:text-slate-950 font-black flex items-center justify-center text-sm border border-slate-700 group-hover:border-amber-300 transition-colors">
+              ${letter}
+            </span>
+            <span class="text-xs sm:text-sm text-slate-200 group-hover:text-white font-bold leading-snug">
+              ${cleanText}
+            </span>
+          </div>
+
+          <div id="opt-icon-${optIdx}" class="relative z-10 text-xl font-black"></div>
+        `;
+
+        // Klik mouse langsung mengecek jawaban
+        btn.onclick = () => handleAnswer(optIdx);
+        container.appendChild(btn);
+      });
+
+      document.getElementById('questionModal').classList.remove('hidden');
+      document.getElementById('robotDialogue').innerHTML = `"Soal telah dibuka! Baca dengan teliti, arahkan bidikan ke pilihan lalu <span class='text-amber-400 font-black'>cubit & tahan 1 detik</span>, atau langsung klik mouse!"`;
+
+      // Otomatis bunyikan soal bila diinginkan (dengan jeda 300ms)
+      setTimeout(speakCurrentQuestion, 350);
+    }
+
+    // --- 8. Eksekusi Jawaban (Gestur / Mouse) ---
+    function handleAnswer(selectedIdx) {
+      if (isAnsweringLocked || !isQuestionModalOpen || !currentActiveBox) return;
+      isAnsweringLocked = true;
+      resetDwellState();
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      const q = currentActiveBox.data;
+      const isCorrect = (selectedIdx === q.answer);
+      const chosenBtn = document.getElementById(`option-btn-${selectedIdx}`);
+      const chosenIcon = document.getElementById(`opt-icon-${selectedIdx}`);
+      const feedback = document.getElementById('answerFeedbackBanner');
+
+      if (isCorrect) {
+        jumlahBenar++;
+        score += 5; // 20 soal * 5 poin = 100 poin maksimal
+        playSfx('correct');
+
+        if (chosenBtn) {
+          chosenBtn.className = "option-answer-btn relative w-full text-left p-3.5 sm:p-4 rounded-2xl border-2 border-emerald-400 bg-emerald-700 text-white font-semibold shadow-lg flex items-center justify-between overflow-hidden";
+        }
+        if (chosenIcon) chosenIcon.innerText = "✅";
+
+        feedback.className = "text-center py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 block animate-bounce";
+        feedback.innerText = "🎉 JAWABAN BENAR! (+5 Poin)";
+        document.getElementById('robotDialogue').innerHTML = `"Luar biasa! Analisis perpajakanmu sangat tepat! Poin bertambah!"`;
+      } else {
+        jumlahSalah++;
+        playSfx('wrong');
+
+        if (chosenBtn) {
+          chosenBtn.className = "option-answer-btn relative w-full text-left p-3.5 sm:p-4 rounded-2xl border-2 border-rose-500 bg-rose-800 text-white font-semibold shadow-lg flex items-center justify-between overflow-hidden animate-shake";
+        }
+        if (chosenIcon) chosenIcon.innerText = "❌";
+
+        // Sorot jawaban yang benar agar siswa belajar
+        const correctBtn = document.getElementById(`option-btn-${q.answer}`);
+        const correctIcon = document.getElementById(`opt-icon-${q.answer}`);
+        if (correctBtn) {
+          correctBtn.className = "option-answer-btn relative w-full text-left p-3.5 sm:p-4 rounded-2xl border-2 border-emerald-400 bg-emerald-950/80 text-emerald-200 font-semibold shadow-md flex items-center justify-between overflow-hidden";
+        }
+        if (correctIcon) correctIcon.innerText = "✅ (Jawaban Tepat)";
+
+        feedback.className = "text-center py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black bg-rose-500/20 border border-rose-500/50 text-rose-300 block";
+        feedback.innerText = "❌ JAWABAN KURANG TEPAT! Pelajari kembali konsep ini ya.";
+        document.getElementById('robotDialogue').innerHTML = `"Belum tepat, jangan patah semangat! Pelajari jawabannya lalu lanjutkan ke kardus berikutnya!"`;
+      }
+
+      soalTerjawab++;
+      updateStatsUI();
+
+      // Tutup modal setelah jeda edukatif
+      const delay = isCorrect ? 1300 : 2000;
+      setTimeout(() => {
+        document.getElementById('questionModal').classList.add('hidden');
+        isQuestionModalOpen = false;
+        isAnsweringLocked = false;
+        currentActiveBox = null;
+
+        // Cek apakah seluruh 20 soal sudah terjawab
+        if (soalTerjawab >= 20) {
+          showFinalResults();
+        }
+      }, delay);
+    }
+
+    function updateStatsUI() {
+      document.getElementById('scoreVal').innerText = score;
+      document.getElementById('answeredVal').innerText = `${soalTerjawab}/20`;
+      document.getElementById('correctVal').innerText = jumlahBenar;
+      document.getElementById('wrongVal').innerText = jumlahSalah;
+    }
+
+    // --- 9. Modal Hasil Akhir (Result Page) ---
+    function showFinalResults() {
+      playSfx('finish');
+
+      document.getElementById('finalScoreDisplay').innerText = score;
+      document.getElementById('finalCorrectCount').innerText = jumlahBenar;
+      document.getElementById('finalWrongCount').innerText = jumlahSalah;
+
+      const badge = document.getElementById('finalPredicateBadge');
+      const message = document.getElementById('finalFeedbackMessage');
+
+      if (score >= 90) {
+        badge.innerText = "🌟 Sangat Memuaskan (A+)";
+        badge.className = "inline-block px-3 py-1 bg-amber-400/20 border border-amber-400/50 text-amber-300 text-xs font-black rounded-full mb-3";
+        message.innerText = "Luar biasa sempurna! Kamu menguasai konsep dasar, subjek, objek, PTKP, dan perhitungan TER PPh 21 layaknya seorang Konsultan Pajak Muda!";
+      } else if (score >= 75) {
+        badge.innerText = "💼 Memuaskan (A)";
+        badge.className = "inline-block px-3 py-1 bg-blue-400/20 border border-blue-400/50 text-blue-300 text-xs font-black rounded-full mb-3";
+        message.innerText = "Kerja bagus! Pemahaman materi PPh 21 kamu sudah sangat baik dan kompeten. Tingkatkan terus ketelitian dalam penentuan kategori PTKP dan TER!";
+      } else if (score >= 60) {
+        badge.innerText = "📚 Cukup Kompeten (B)";
+        badge.className = "inline-block px-3 py-1 bg-emerald-400/20 border border-emerald-400/50 text-emerald-300 text-xs font-black rounded-full mb-3";
+        message.innerText = "Cukup baik! Kamu memahami dasar-dasar PPh 21, namun perlu memperdalam kembali perbedaan kategori TER A, B, C dan perhitungan praktisnya.";
+      } else {
+        badge.innerText = "💡 Perlu Pendalaman Materi (C)";
+        badge.className = "inline-block px-3 py-1 bg-rose-400/20 border border-rose-400/50 text-rose-300 text-xs font-black rounded-full mb-3";
+        message.innerText = "Jangan berkecil hati! Pelajari kembali materi PPh 21 bersama guru dan temanmu, lalu ulangi kuis asesmen ini untuk mengasah kemampuanmu!";
+      }
+
+      document.getElementById('resultModal').classList.remove('hidden');
+      document.getElementById('robotDialogue').innerHTML = `"Selamat! 20 soal PPh 21 telah selesai kamu kerjakan! Cek hasil akhir evaluasimu!"`;
+    }
+
+    function resetGame() {
+      soalTerjawab = 0;
+      jumlahBenar = 0;
+      jumlahSalah = 0;
+      score = 0;
+
+      updateStatsUI();
+      initBoxes();
+
+      document.getElementById('resultModal').classList.add('hidden');
+      document.getElementById('zonkModal').classList.add('hidden');
+      document.getElementById('questionModal').classList.add('hidden');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementById('robotDialogue').innerHTML = `"30 Kardus berkas pajak telah diacak ulang! Pilih kardus mana yang mau dibuka duluan!"`;
+      playSfx('correct');
+    }
+
+    // --- 10. Navigasi Modal & Panduan ---
+    function openGuideModal() {
+      document.getElementById('guideModal').classList.remove('hidden');
+    }
+    function closeGuideModal() {
+      document.getElementById('guideModal').classList.add('hidden');
+    }
+
+    // --- 11. Edge Scrolling Otomatis Saat Membidik Layar ---
+    function handleTouchlessEdgeScroll(screenY) {
+      if (isQuestionModalOpen) return;
+
+      const topZone = window.innerHeight * 0.15;
+      const bottomZone = window.innerHeight * 0.85;
+      const topInd = document.getElementById('scrollTopIndicator');
+      const botInd = document.getElementById('scrollBottomIndicator');
+
+      if (screenY < topZone) {
+        window.scrollBy({ top: -14, behavior: 'auto' });
+        topInd.style.opacity = '1';
+        botInd.style.opacity = '0';
+      } else if (screenY > bottomZone) {
+        window.scrollBy({ top: 14, behavior: 'auto' });
+        botInd.style.opacity = '1';
+        topInd.style.opacity = '0';
+      } else {
+        topInd.style.opacity = '0';
+        botInd.style.opacity = '0';
+      }
+    }
+
+    // --- 12. Dwell Pinch Tracking pada Tombol Pilihan Ganda ---
+    function updateDwellOnOption(screenX, screenY, isPinching) {
+      if (!isQuestionModalOpen || isAnsweringLocked) return;
+
+      if (!isPinching) {
+        resetDwellState();
+        return;
+      }
+
+      // Ambil seluruh tombol opsi jawaban
+      const optionButtons = document.querySelectorAll('.option-answer-btn');
+      let targetedIdx = -1;
+
+      optionButtons.forEach((btn, idx) => {
+        const rect = btn.getBoundingClientRect();
+        if (
+          screenX >= rect.left &&
+          screenX <= rect.right &&
+          screenY >= rect.top &&
+          screenY <= rect.bottom
+        ) {
+          targetedIdx = idx;
+        }
+      });
+
+      if (targetedIdx !== -1) {
+        if (dwellTargetIdx === targetedIdx) {
+          // Melanjutkan dwell pada tombol yang sama
+          const elapsed = performance.now() - dwellStartTime;
+          const progress = Math.min(100, (elapsed / DWELL_REQUIRED_MS) * 100);
+
+          const bar = document.getElementById(`opt-progress-${targetedIdx}`);
+          if (bar) bar.style.width = `${progress}%`;
+
+          const letter = String.fromCharCode(65 + targetedIdx);
+          const badge = document.getElementById('modalHoldProgressBadge');
+          if (badge) badge.innerHTML = `Mengunci Pilihan <b class="text-amber-400">${letter}</b>: ${Math.floor(progress)}%`;
+
+          const statusText = document.getElementById('gestureStatus');
+          if (statusText) statusText.innerText = `Cubit & Tahan [${letter}]: ${Math.floor(progress)}%`;
+
+          if (elapsed >= DWELL_REQUIRED_MS) {
+            // Berhasil mengunci jawaban
+            resetDwellState();
+            handleAnswer(targetedIdx);
+          }
+        } else {
+          // Berpindah ke tombol opsi lain
+          resetDwellState();
+          dwellTargetIdx = targetedIdx;
+          dwellStartTime = performance.now();
+          const bar = document.getElementById(`opt-progress-${targetedIdx}`);
+          if (bar) bar.style.width = '0%';
+        }
+      } else {
+        resetDwellState();
+      }
+    }
+
+    function resetDwellState() {
+      if (dwellTargetIdx !== -1) {
+        const bar = document.getElementById(`opt-progress-${dwellTargetIdx}`);
+        if (bar) bar.style.width = '0%';
+      }
+      dwellTargetIdx = -1;
+      dwellStartTime = null;
+
+      const badge = document.getElementById('modalHoldProgressBadge');
+      if (badge) badge.innerText = "Cubit & Tahan Jawaban 1 Detik";
+    }
+
+    // --- 13. Eksekusi Pinch Click pada Berkas Kardus ---
+    function executePinchClick(x, y) {
+      // 1. Cek kardus pada grid utama
+      const boxElements = document.querySelectorAll('.box-item:not(.opened)');
+      for (let boxElem of boxElements) {
+        const rect = boxElem.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          const id = parseInt(boxElem.getAttribute('data-box-id'));
+          selectBox(id);
+          return;
+        }
+      }
+
+      // 2. Cek elemen tombol interaktif lainnya
+      const crosshair = document.getElementById('crosshair');
+      crosshair.style.display = 'none';
+      const targetElem = document.elementFromPoint(x, y);
+      crosshair.style.display = 'flex';
+
+      if (targetElem) {
+        const clickable = targetElem.closest('button, .interactive-btn');
+        if (clickable) {
+          clickable.click();
+        }
+      }
+    }
+
+    // --- 14. Engine MediaPipe Hand Tracking ---
+    function onHandResults(results) {
+      if (!isCameraActive) return;
+
+      const crosshair = document.getElementById('crosshair');
+      const gestureStatus = document.getElementById('gestureStatus');
+      const handsBadge = document.getElementById('handsDetectedBadge');
+
+      const handsCount = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
+      handsBadge.innerText = `${handsCount} Tangan`;
+
+      if (handsCount > 0) {
+        const mainHand = results.multiHandLandmarks[0];
+        const indexTip = mainHand[8];
+        const thumbTip = mainHand[4];
+
+        // Koordinat cermin layar
+        const screenX = (1 - indexTip.x) * window.innerWidth;
+        const screenY = indexTip.y * window.innerHeight;
+
+        crosshair.style.left = `${screenX}px`;
+        crosshair.style.top = `${screenY}px`;
+
+        handleTouchlessEdgeScroll(screenY);
+
+        // Hitung jarak cubitan jempol dan telunjuk
+        const dx = thumbTip.x - indexTip.x;
+        const dy = thumbTip.y - indexTip.y;
+        const pinchDist = Math.hypot(dx, dy);
+        const isPinchedNow = (pinchDist < 0.075);
+
+        if (isPinchedNow) {
+          crosshair.classList.add('pinched');
+          if (isQuestionModalOpen) {
+            updateDwellOnOption(screenX, screenY, true);
+          } else {
+            gestureStatus.innerText = "💥 CUBIT (Buka Kardus)";
+            if (!wasPinched) {
+              wasPinched = true;
+              executePinchClick(screenX, screenY);
+            }
+          }
+        } else {
+          crosshair.classList.remove('pinched');
+          wasPinched = false;
+
+          if (isQuestionModalOpen) {
+            updateDwellOnOption(screenX, screenY, false);
+            gestureStatus.innerText = "Bidik & Cubit Tahan Pilihan";
+          } else {
+            gestureStatus.innerText = "Membidik Kardus...";
+          }
+        }
+      } else {
+        gestureStatus.innerText = "Tangan Tidak Terlihat";
+        if (isQuestionModalOpen) {
+          resetDwellState();
+        }
+      }
+    }
+
+    // --- 15. Toggle Kamera (ON / OFF) ---
+    function toggleCamera() {
+      isCameraActive = !isCameraActive;
+      updateCameraStateUI();
+
+      if (isCameraActive) {
+        startCameraEngine();
+      } else {
+        stopCameraEngine();
+      }
+    }
+
+    function updateCameraStateUI() {
+      const toggleBtn = document.getElementById('cameraToggleBtn');
+      const toggleIcon = document.getElementById('camToggleIcon');
+      const toggleLabel = document.getElementById('camToggleLabel');
+      const camStatusDot = document.getElementById('camStatusDot');
+      const camBadgeStatus = document.getElementById('camBadgeStatus');
+      const camOffOverlay = document.getElementById('camOffOverlay');
+      const crosshair = document.getElementById('crosshair');
+      const currentControlMode = document.getElementById('currentControlMode');
+
+      if (isCameraActive) {
+        toggleBtn.className = "interactive-btn px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-md border border-emerald-400 flex items-center gap-1.5 transition active:scale-95 cursor-pointer";
+        toggleIcon.innerText = "📹";
+        toggleLabel.innerText = "Gestur Kamera: ON";
+        camStatusDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        camBadgeStatus.className = "text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30";
+        camBadgeStatus.innerText = "Aktif";
+        camOffOverlay.classList.add('hidden');
+        crosshair.style.display = 'flex';
+        currentControlMode.innerText = "AI & Mouse";
+        document.getElementById('gestureStatus').innerText = "Kamera Menyala...";
+      } else {
+        toggleBtn.className = "interactive-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-bold text-xs shadow-md border border-slate-700 flex items-center gap-1.5 transition active:scale-95 cursor-pointer";
+        toggleIcon.innerText = "📷";
+        toggleLabel.innerText = "Gestur Kamera: OFF";
+        camStatusDot.className = "w-2 h-2 rounded-full bg-slate-500";
+        camBadgeStatus.className = "text-[9px] bg-slate-700 text-slate-400 font-bold px-1.5 py-0.5 rounded";
+        camBadgeStatus.innerText = "Nonaktif";
+        camOffOverlay.classList.remove('hidden');
+        crosshair.style.display = 'none';
+        currentControlMode.innerText = "Mouse (Manual)";
+        document.getElementById('gestureStatus').innerText = "Kamera Dinonaktifkan";
+        document.getElementById('handsDetectedBadge').innerText = "0 Tangan";
+      }
+    }
+
+    function startCameraEngine() {
+      const videoElement = document.getElementById('webcam');
+
+      if (!handsInstance) {
+        handsInstance = new Hands({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        handsInstance.setOptions({
+          maxNumHands: 2,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.65,
+          minTrackingConfidence: 0.65
+        });
+
+        handsInstance.onResults(onHandResults);
+      }
+
+      if (!cameraInstance) {
+        cameraInstance = new Camera(videoElement, {
+          onFrame: async () => {
+            if (isCameraActive && handsInstance) {
+              await handsInstance.send({ image: videoElement });
+            }
+          },
+          width: 320,
+          height: 240
+        });
+      }
+
+      cameraInstance.start().then(() => {
+        document.getElementById('gestureStatus').innerText = "Kamera Siap!";
+      }).catch(err => {
+        console.warn("Akses kamera tidak diizinkan atau gagal:", err);
+        document.getElementById('gestureStatus').innerText = "Mode Mouse Aktif";
+        isCameraActive = false;
+        updateCameraStateUI();
+      });
+    }
+
+    function stopCameraEngine() {
+      if (cameraInstance) {
+        try { cameraInstance.stop(); } catch (e) {}
+      }
+      const videoElement = document.getElementById('webcam');
+      if (videoElement && videoElement.srcObject) {
+        const stream = videoElement.srcObject;
+        stream.getTracks().forEach(track => track.stop());
+        videoElement.srcObject = null;
+      }
+    }
+
+    // --- 16. Start Game on Load ---
+    initBoxes();
+    updateStatsUI();
+
+    window.addEventListener('DOMContentLoaded', () => {
+      startCameraEngine();
+    });
+  </script>
+</body>
+</html>
