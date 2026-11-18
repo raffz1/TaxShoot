@@ -87,25 +87,22 @@
       animation: shakeWrong 0.35s ease-in-out;
     }
 
-    /* Animasi Bantal Kentut Zonk */
-    @keyframes squishWhoopee {
-      0%, 100% { transform: scale(1, 1); }
-      30% { transform: scale(1.25, 0.75); }
-      50% { transform: scale(0.85, 1.15); }
-      70% { transform: scale(1.08, 0.92); }
+    /* Animasi Angin Kosong Zonk (Elegan & Halus) */
+    @keyframes windFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-7px) rotate(2deg); }
     }
-    .animate-squish {
-      animation: squishWhoopee 1.2s ease-in-out infinite;
-      transform-origin: bottom center;
+    .animate-wind-float {
+      animation: windFloat 2.6s ease-in-out infinite;
     }
 
-    @keyframes smokeDrift {
-      0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
+    @keyframes breezeDrift {
+      0% { transform: translateX(-15px) scale(0.8); opacity: 0; }
       40% { opacity: 0.9; }
-      100% { transform: translate(15px, -20px) scale(1.2); opacity: 0; }
+      100% { transform: translateX(20px) scale(1.15); opacity: 0; }
     }
-    .smoke-puff-1 { animation: smokeDrift 1.5s ease-out infinite; }
-    .smoke-puff-2 { animation: smokeDrift 1.5s ease-out infinite 0.5s; }
+    .breeze-puff-1 { animation: breezeDrift 2s ease-out infinite; }
+    .breeze-puff-2 { animation: breezeDrift 2s ease-out infinite 0.7s; }
 
     /* Card Mini Panduan di Footer */
     .footer-guide-card {
@@ -131,8 +128,8 @@
     <span>⬇️</span> Menggulung ke Bawah...
   </div>
 
-  <!-- Header Banner -->
-  <header class="w-full max-w-6xl bg-slate-900/90 backdrop-blur-md rounded-3xl p-3 sm:p-4 shadow-2xl border-2 border-indigo-900/60 flex flex-wrap items-center justify-between gap-3 sticky top-3 z-30">
+  <!-- Header Banner (z-[88]: Selalu Terlihat Jelas di Atas Layar) -->
+  <header class="w-full max-w-6xl bg-slate-900/95 backdrop-blur-md rounded-3xl p-3 sm:p-4 shadow-2xl border-2 border-indigo-900/80 flex flex-wrap items-center justify-between gap-3 sticky top-3 z-[88]">
     <!-- Brand & Judul Game -->
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-gradient-to-tr from-amber-500 to-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-md border-2 border-amber-300 text-slate-950">
@@ -151,12 +148,12 @@
 
     <!-- Status Bar & Navigasi Kanan -->
     <div class="flex items-center flex-wrap gap-2">
-      <!-- Skor Nilai -->
-      <div class="flex items-center gap-2 bg-slate-800/80 border border-amber-500/40 px-3.5 py-1.5 rounded-2xl shadow-sm">
+      <!-- Skor Nilai Real-Time -->
+      <div id="scoreBoxNav" class="flex items-center gap-2 bg-slate-800/90 border-2 border-amber-400/60 px-3.5 py-1.5 rounded-2xl shadow-md transition-all duration-300">
         <span class="text-xl">🏆</span>
         <div class="text-left">
           <span class="text-[9px] uppercase font-bold text-amber-400 block leading-none">Skor Asesmen</span>
-          <span id="scoreVal" class="text-lg font-black text-amber-300 leading-none">0</span>
+          <span id="scoreVal" class="text-lg font-black text-amber-300 leading-none inline-block transition-transform duration-200">0</span>
         </div>
       </div>
 
@@ -216,7 +213,7 @@
       </h2>
       <p class="text-xs sm:text-sm text-slate-300 font-medium drop-shadow mt-1">
         Komposisi: <span class="bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-md font-bold border border-amber-400/30">20 Soal PPh 21</span> dan 
-        <span class="bg-pink-400/20 text-pink-300 px-2 py-0.5 rounded-md font-bold border border-pink-400/30">10 Kardus ZONK Kentut</span>. Jawab semua soal untuk melihat hasil nilai akhirmu!
+        <span class="bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-md font-bold border border-cyan-400/30">10 Kardus ZONK Angin Kosong</span>. Jawab semua soal untuk melihat hasil nilai akhirmu!
       </p>
     </div>
 
@@ -339,8 +336,8 @@
   <!-- ======================================================== -->
   <!-- MODAL SOAL PILIHAN GANDA (A, B, C, D, E) -->
   <!-- ======================================================== -->
-  <div id="questionModal" class="fixed inset-0 z-[85] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 hidden">
-    <div class="bg-slate-900 text-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border-2 border-amber-400/80 relative flex flex-col gap-4 max-h-[92vh] overflow-y-auto">
+  <div id="questionModal" class="fixed inset-0 z-[85] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 pt-24 sm:pt-28 hidden">
+    <div class="bg-slate-900 text-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border-2 border-amber-400/80 relative flex flex-col gap-4 max-h-[88vh] overflow-y-auto">
       
       <!-- Header Modal Soal -->
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -384,41 +381,45 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL ZONK (BANTAL KENTUT KOCAK) -->
+  <!-- MODAL ZONK (ANGIN KOSONG - ELEGAN & EDUKATIF) -->
   <!-- ======================================================== -->
-  <div id="zonkModal" class="fixed inset-0 z-[85] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 text-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-pink-500 relative">
-      <div class="relative w-32 h-28 mx-auto flex items-center justify-center my-1">
-        <!-- Asap Hijau Kentut -->
-        <svg viewBox="0 0 100 100" class="smoke-puff-1 absolute -right-3 -top-2 w-16 h-16 pointer-events-none opacity-80">
-          <circle cx="50" cy="50" r="18" fill="#bef264" />
-          <circle cx="35" cy="40" r="14" fill="#a3e635" />
-          <circle cx="65" cy="45" r="15" fill="#d9f99d" />
-        </svg>
-        <svg viewBox="0 0 100 100" class="smoke-puff-2 absolute -right-6 top-6 w-12 h-12 pointer-events-none opacity-80">
-          <circle cx="50" cy="50" r="14" fill="#a3e635" />
-          <circle cx="65" cy="55" r="12" fill="#bef264" />
-        </svg>
+  <div id="zonkModal" class="fixed inset-0 z-[85] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 pt-24 sm:pt-28 hidden">
+    <div class="bg-slate-900 text-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-cyan-400/80 relative">
+      
+      <!-- Ilustrasi Angin Kosong & Berkas Kosong yang Elegan -->
+      <div class="relative w-36 h-28 mx-auto flex items-center justify-center my-2">
+        <!-- Partikel Hembusan Angin Halus -->
+        <div class="breeze-puff-1 absolute -left-2 top-2 text-2xl opacity-75 pointer-events-none">
+          💨
+        </div>
+        <div class="breeze-puff-2 absolute -right-2 bottom-3 text-2xl opacity-75 pointer-events-none">
+          🌬️
+        </div>
 
-        <!-- Bantal Kentut -->
-        <div class="animate-squish relative z-10 w-24 h-20 bg-gradient-to-b from-pink-400 to-rose-500 rounded-[50px/40px] border-4 border-rose-600 shadow-md flex flex-col items-center justify-center">
-          <div class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-4 h-5 bg-rose-500 border-2 border-rose-700 rounded-l-md"></div>
-          <div class="flex items-center gap-3 mb-1">
-            <span class="text-xs font-black text-rose-950 font-mono">><</span>
-            <div class="w-2.5 h-2.5 bg-rose-950 rounded-full"></div>
-          </div>
-          <div class="relative w-4 h-2 border-b-2 border-rose-950 rounded-full flex justify-center">
-            <div class="w-2 h-2 bg-red-400 rounded-b-full border border-rose-700 -bottom-1 absolute"></div>
-          </div>
+        <!-- Wadah Kotak Berkas Kosong dengan Animasi Melayang -->
+        <div class="animate-wind-float relative z-10 w-28 h-24 bg-gradient-to-b from-slate-800 to-slate-900 rounded-2xl border-2 border-cyan-400/70 shadow-lg flex flex-col items-center justify-center p-2">
+          <!-- Ikon Berkas Terbuka Kosong -->
+          <svg viewBox="0 0 64 64" class="w-12 h-12 text-cyan-400 drop-shadow">
+            <!-- Box Outline -->
+            <path d="M8 22 L32 10 L56 22 L32 34 Z" fill="#0ea5e9" opacity="0.3" stroke="#38bdf8" stroke-width="2"/>
+            <path d="M8 22 L32 34 L32 54 L8 42 Z" fill="#0284c7" opacity="0.4" stroke="#38bdf8" stroke-width="2"/>
+            <path d="M56 22 L32 34 L32 54 L56 42 Z" fill="#0369a1" opacity="0.5" stroke="#38bdf8" stroke-width="2"/>
+            <!-- Swirling Wind Path -->
+            <path d="M20 26 C28 20, 36 30, 44 24" fill="none" stroke="#bae6fd" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M24 32 C30 28, 36 34, 42 30" fill="none" stroke="#e0f2fe" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="text-[10px] font-black uppercase text-cyan-300 mt-1 tracking-wider bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/40">
+            KOSONG
+          </span>
         </div>
       </div>
 
-      <h3 class="text-2xl font-black text-pink-400 mb-1 font-playful tracking-wide">YAAAH ZONK! 💨</h3>
+      <h3 class="text-2xl font-black text-cyan-300 mb-1 font-playful tracking-wide">YAAAH ZONK! 🌬️</h3>
       <p class="text-xs font-semibold text-slate-300 mb-5 leading-relaxed">
-        Ppprrfttt! Kardus ini isinya cuma <span class="text-pink-400 font-black">bantal kentut usil</span>! Bukan dokumen kuis perpajakan. Ayo buka kardus lainnya!
+        YAAAH ZONK! 🌬️ Berkas ini ternyata kosong dan cuma berisi angin! Yuk cari berkas pajak di kardus lainnya.
       </p>
 
-      <button onclick="closeZonk()" class="interactive-btn w-full py-3.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 font-black text-white text-sm rounded-2xl shadow-lg shadow-pink-500/20 transition transform active:scale-95 border border-pink-400 cursor-pointer">
+      <button onclick="closeZonk()" class="interactive-btn w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 font-black text-white text-sm rounded-2xl shadow-lg shadow-cyan-500/20 transition transform active:scale-95 border border-cyan-400 cursor-pointer">
         Buka Kardus Lain! 🚀
       </button>
     </div>
@@ -427,7 +428,7 @@
   <!-- ======================================================== -->
   <!-- MODAL HASIL AKHIR ASESMEN (RESULT PAGE POP-UP) -->
   <!-- ======================================================== -->
-  <div id="resultModal" class="fixed inset-0 z-[96] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+  <div id="resultModal" class="fixed inset-0 z-[96] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 pt-24 sm:pt-28 hidden">
     <div class="bg-slate-900 text-white rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center shadow-2xl border-4 border-amber-400 relative">
       <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-3xl mx-auto flex items-center justify-center text-4xl shadow-xl border-2 border-amber-200 text-slate-950 mb-3 animate-bounce">
         🏆
@@ -483,7 +484,7 @@
   <!-- ======================================================== -->
   <!-- MODAL PANDUAN PENGGUNAAN -->
   <!-- ======================================================== -->
-  <div id="guideModal" class="fixed inset-0 z-[95] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+  <div id="guideModal" class="fixed inset-0 z-[95] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 pt-24 sm:pt-28 hidden">
     <div class="bg-slate-900 text-white rounded-3xl max-w-xl w-full p-6 text-center shadow-2xl border-2 border-indigo-500/80 relative">
       <button onclick="closeGuideModal()" class="interactive-btn absolute top-4 right-4 w-8 h-8 bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-400 rounded-full font-black text-sm flex items-center justify-center transition cursor-pointer">
         ✕
@@ -529,7 +530,7 @@
         </div>
 
         <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700">
-          <div class="flex items-center gap-2 mb-1.5 text-pink-400 font-bold text-xs">
+          <div class="flex items-center gap-2 mb-1.5 text-cyan-400 font-bold text-xs">
             <span>📷</span> 4. Toggle Kamera
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
@@ -596,15 +597,28 @@
           osc.start(now);
           osc.stop(now + 0.28);
         } else if (type === 'zonk') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(170, now);
-          osc.frequency.linearRampToValueAtTime(90, now + 0.1);
-          osc.frequency.linearRampToValueAtTime(130, now + 0.2);
-          osc.frequency.linearRampToValueAtTime(50, now + 0.4);
-          gain.gain.setValueAtTime(0.35, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+          // SFX Angin Kosong / Nada Kecewa Halus (Elegan & Sopan)
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.45);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
           osc.start(now);
-          osc.stop(now + 0.4);
+          osc.stop(now + 0.45);
+
+          try {
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(240, now);
+            osc2.frequency.exponentialRampToValueAtTime(110, now + 0.45);
+            gain2.gain.setValueAtTime(0.2, now);
+            gain2.gain.linearRampToValueAtTime(0.01, now + 0.45);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now);
+            osc2.stop(now + 0.45);
+          } catch(e) {}
         } else if (type === 'finish') {
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(523.25, now);
@@ -689,7 +703,7 @@
     let handsInstance = null;
     let wasPinched = false;
 
-    // --- 5. Inisialisasi 30 Kardus (20 Soal + 10 Zonk) ---
+    // --- 5. Inisialisasi 30 Kardus (20 Soal + 10 Zonk Angin Kosong) ---
     function initBoxes() {
       const grid = document.getElementById('boxGrid');
       grid.innerHTML = '';
@@ -718,7 +732,7 @@
 
         card.innerHTML = `
           <div class="box-sparkles absolute -top-4 text-2xl font-black transition-all duration-300 opacity-0 pointer-events-none z-30 drop-shadow">
-            ${item.type === 'zonk' ? '💨' : '✨ 📑 ✨'}
+            ${item.type === 'zonk' ? '🌬️' : '✨ 📑 ✨'}
           </div>
 
           <div class="relative w-28 h-28 flex flex-col items-center justify-center">
@@ -777,7 +791,7 @@
         setTimeout(() => {
           if (box.type === 'zonk') {
             playSfx('zonk');
-            document.getElementById('robotDialogue').innerHTML = `"Aduh ZONK! Berkas ini cuma berisi bantal kentut! Buka kardus lainnya ya!"`;
+            document.getElementById('robotDialogue').innerHTML = `"Wah ZONK! Berkas ini ternyata kosong dan cuma berisi hembusan angin! Yuk cari berkas pajak di kardus lainnya!"`;
             document.getElementById('zonkModal').classList.remove('hidden');
           } else {
             openQuestionModal(box);
@@ -842,11 +856,11 @@
       document.getElementById('questionModal').classList.remove('hidden');
       document.getElementById('robotDialogue').innerHTML = `"Soal telah dibuka! Baca dengan teliti, arahkan bidikan ke pilihan lalu <span class='text-amber-400 font-black'>cubit & tahan 1 detik</span>, atau langsung klik mouse!"`;
 
-      // Otomatis bunyikan soal bila diinginkan (dengan jeda 300ms)
+      // Otomatis bunyikan soal bila diinginkan (dengan jeda 350ms)
       setTimeout(speakCurrentQuestion, 350);
     }
 
-    // --- 8. Eksekusi Jawaban (Gestur / Mouse) ---
+    // --- 8. Eksekusi Jawaban & Pembaruan Skor Real-Time di Navbar ---
     function handleAnswer(selectedIdx) {
       if (isAnsweringLocked || !isQuestionModalOpen || !currentActiveBox) return;
       isAnsweringLocked = true;
@@ -862,9 +876,20 @@
       const chosenIcon = document.getElementById(`opt-icon-${selectedIdx}`);
       const feedback = document.getElementById('answerFeedbackBanner');
 
+      // 1. Eksekusi penambahan skor & update real-time di Navbar seketika
       if (isCorrect) {
+        score += 5; // +5 poin per jawaban benar (20 soal = 100 poin)
         jumlahBenar++;
-        score += 5; // 20 soal * 5 poin = 100 poin maksimal
+      } else {
+        jumlahSalah++;
+      }
+      soalTerjawab++;
+
+      // Langsung render ke DOM Navbar saat itu juga
+      updateStatsUI();
+      highlightScoreUpdate(isCorrect);
+
+      if (isCorrect) {
         playSfx('correct');
 
         if (chosenBtn) {
@@ -873,10 +898,9 @@
         if (chosenIcon) chosenIcon.innerText = "✅";
 
         feedback.className = "text-center py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 block animate-bounce";
-        feedback.innerText = "🎉 JAWABAN BENAR! (+5 Poin)";
-        document.getElementById('robotDialogue').innerHTML = `"Luar biasa! Analisis perpajakanmu sangat tepat! Poin bertambah!"`;
+        feedback.innerText = `🎉 JAWABAN BENAR! (+5 Poin) • Total Skor Kamu Sekarang: ${score}`;
+        document.getElementById('robotDialogue').innerHTML = `"Luar biasa! Analisis perpajakanmu sangat tepat! Poin bertambah jadi ${score}!"`;
       } else {
-        jumlahSalah++;
         playSfx('wrong');
 
         if (chosenBtn) {
@@ -897,9 +921,6 @@
         document.getElementById('robotDialogue').innerHTML = `"Belum tepat, jangan patah semangat! Pelajari jawabannya lalu lanjutkan ke kardus berikutnya!"`;
       }
 
-      soalTerjawab++;
-      updateStatsUI();
-
       // Tutup modal setelah jeda edukatif
       const delay = isCorrect ? 1300 : 2000;
       setTimeout(() => {
@@ -916,10 +937,34 @@
     }
 
     function updateStatsUI() {
-      document.getElementById('scoreVal').innerText = score;
-      document.getElementById('answeredVal').innerText = `${soalTerjawab}/20`;
-      document.getElementById('correctVal').innerText = jumlahBenar;
-      document.getElementById('wrongVal').innerText = jumlahSalah;
+      const scoreElem = document.getElementById('scoreVal');
+      const answeredElem = document.getElementById('answeredVal');
+      const correctElem = document.getElementById('correctVal');
+      const wrongElem = document.getElementById('wrongVal');
+
+      if (scoreElem) scoreElem.innerText = score;
+      if (answeredElem) answeredElem.innerText = `${soalTerjawab}/20`;
+      if (correctElem) correctElem.innerText = jumlahBenar;
+      if (wrongElem) wrongElem.innerText = jumlahSalah;
+    }
+
+    function highlightScoreUpdate(isCorrect) {
+      const scoreElem = document.getElementById('scoreVal');
+      const scoreBox = document.getElementById('scoreBoxNav');
+
+      if (scoreElem) {
+        scoreElem.classList.add('scale-125', isCorrect ? 'text-emerald-400' : 'text-amber-300');
+        setTimeout(() => {
+          scoreElem.classList.remove('scale-125', 'text-emerald-400');
+        }, 450);
+      }
+
+      if (scoreBox && isCorrect) {
+        scoreBox.classList.add('border-emerald-400', 'bg-emerald-950/60', 'scale-105');
+        setTimeout(() => {
+          scoreBox.classList.remove('border-emerald-400', 'bg-emerald-950/60', 'scale-105');
+        }, 450);
+      }
     }
 
     // --- 9. Modal Hasil Akhir (Result Page) ---
